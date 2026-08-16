@@ -9,8 +9,16 @@ from datetime import datetime
 #Load model
 model = YOLO("yolov8n.pt")  # load a pretrained model (recommended for training)
 
-#Video
-VIDEO_PATH = "paulista.mp4"
+#Line Position
+vPadrao = "VERTICAL"  # "HORIZONTAL" ou "VERTICAL"
+if vPadrao == "HORIZONTAL":
+    VIDEO_PATH = "people.mp4"
+    LINE_Y = 300
+    LINE_X = 0
+else:
+    VIDEO_PATH = "paulista.mp4"
+    LINE_Y = 0
+    LINE_X = 1150
 
 if not os.path.exists(VIDEO_PATH):
     raise FileNotFoundError(
@@ -29,15 +37,6 @@ if not cap.isOpened():
 
 #Tracker
 tracker = sv.ByteTrack()
-
-#Line Position
-vPadrao = "VERTICAL"  # "HORIZONTAL" ou "VERTICAL"
-if vPadrao == "HORIZONTAL":
-    LINE_Y = 300
-    LINE_X = 0
-else:
-    LINE_Y = 0
-    LINE_X = 1150
 
 up_count = 0
 down_count = 0

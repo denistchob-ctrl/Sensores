@@ -10,7 +10,7 @@ from datetime import datetime
 model = YOLO("yolov8n.pt")  # load a pretrained model (recommended for training)
 
 #Video
-VIDEO_PATH = "people.mp4"
+VIDEO_PATH = "paulista.mp4"
 
 if not os.path.exists(VIDEO_PATH):
     raise FileNotFoundError(
@@ -31,7 +31,13 @@ if not cap.isOpened():
 tracker = sv.ByteTrack()
 
 #Line Position
-LINE_Y = 180
+vPadrao = "VERTICAL"  # "HORIZONTAL" ou "VERTICAL"
+if vPadrao == "HORIZONTAL":
+    LINE_Y = 300
+    LINE_X = 0
+else:
+    LINE_Y = 0
+    LINE_X = 1150
 
 up_count = 0
 down_count = 0
@@ -68,13 +74,22 @@ while True:
     detections = sv.Detections.from_ultralytics(results)
     detections = tracker.update_with_detections(detections)
 
-    cv2.line(
-        frame,
-        (0, LINE_Y),
-        (frame.shape[1], LINE_Y),
-        (0, 0, 255),
-        2
-    )
+    if vPadrao == "HORIZONTAL":
+        cv2.line(
+            frame,
+            (0, LINE_Y),
+            (frame.shape[1], LINE_Y),
+            (0, 0, 255),
+            2
+        )
+    else:
+        cv2.line(
+            frame,
+            (LINE_X, 0),
+            (LINE_X, frame.shape[0]),
+            (0, 0, 255),
+            2
+        )
 
     # Lista de IDs ativos neste frame para verificar quem saiu
     active_ids = set()
@@ -108,23 +123,42 @@ while True:
             # Adicionar posição à trajetória
             people_data[track_id]['trajectory'].append((cx, cy))
 
-        prev_y = track_history[track_id]
+        if vPadrao == "HORIZONTAL":
+            prev_y = track_history[track_id]
 
-        #Moving Down (IN)
-        if prev_y < LINE_Y and cy >= LINE_Y:
-            down_count += 1
-            people_data[track_id]['direction'] = 'IN'
-            people_data[track_id]['crossed_line'] = True
-            print(f"[{frame_count}] ID {track_id} cruzou a linha para BAIXO (IN) - posição: ({cx}, {cy})")
-            
-        #Moving Up (OUT)
-        elif prev_y > LINE_Y and cy <= LINE_Y:
-            up_count += 1
-            people_data[track_id]['direction'] = 'OUT'
-            people_data[track_id]['crossed_line'] = True
-            print(f"[{frame_count}] ID {track_id} cruzou a linha para CIMA (OUT) - posição: ({cx}, {cy})")
+            #Moving Down (IN) (considerado como "IN" ou entrada)
+            if prev_y < LINE_Y and cy >= LINE_Y:
+                down_count += 1 # Pessoa veio de cima e foi para baixo
+                people_data[track_id]['direction'] = 'IN'
+                people_data[track_id]['crossed_line'] = True
+                print(f"[{frame_count}] ID {track_id} cruzou a linha para BAIXO (IN) - posição: ({cx}, {cy})")
+                
+            #Moving Up (OUT) (considerado como "OUT" ou saída)
+            elif prev_y > LINE_Y and cy <= LINE_Y:
+                up_count += 1 # Pessoa veio de baixo e foi para cima
+                people_data[track_id]['direction'] = 'OUT'
+                people_data[track_id]['crossed_line'] = True
+                print(f"[{frame_count}] ID {track_id} cruzou a linha para CIMA (OUT) - posição: ({cx}, {cy})")
 
-        track_history[track_id] = cy
+            track_history[track_id] = cy
+        else:  # Vertical line case
+            prev_x = track_history[track_id]
+
+            #Moving Right (IN) (considerado como "IN" ou entrada)
+            if prev_x < LINE_X and cx >= LINE_X:
+                down_count += 1 # Pessoa veio da esquerda e foi para a direita
+                people_data[track_id]['direction'] = 'IN'
+                people_data[track_id]['crossed_line'] = True
+                print(f"[{frame_count}] ID {track_id} cruzou a linha para a DIREITA (IN) - posição: ({cx}, {cy})")
+
+            #Moving Left (OUT) (considerado como "OUT" ou saída)
+            elif prev_x > LINE_X and cx <= LINE_X:
+                up_count += 1 # Pessoa veio da direita e foi para a esquerda
+                people_data[track_id]['direction'] = 'OUT'
+                people_data[track_id]['crossed_line'] = True
+                print(f"[{frame_count}] ID {track_id} cruzou a linha para a ESQUERDA (OUT) - posição: ({cx}, {cy})")
+
+            track_history[track_id] = cx
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
         
@@ -169,7 +203,7 @@ while True:
     cv2.rectangle(dashboard, (0, 0), (1000, 80), (0, 120, 0), -1)
     cv2.putText(
         dashboard,
-        "People Counter",
+        "Contador de Pessoas",
         (20, 55),
         cv2.FONT_HERSHEY_SIMPLEX,
         1.8,
@@ -181,7 +215,7 @@ while True:
     cv2.putText(
         dashboard,
         f"Total Pessoas: {len(people_data)}",
-        (800, 55),
+        (700, 55),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.8,
         (255, 255, 255),
@@ -193,26 +227,33 @@ while True:
     #put video inside dashboard
     dashboard[90:590, 50:950] = frame_resized
 
+    if vPadrao == "HORIZONTAL":
+        txtIN = "IN"
+        txtOUT = "OUT"
+    else:
+        txtIN = "DIREITA"
+        txtOUT = "ESQUERDA"
+
     #Out Panel
     cv2.rectangle(dashboard, (50, 620), (450, 780), (0, 0, 180), -1)
     cv2.putText(
-        dashboard, "OUT", (70, 715),
-        cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 4
+        dashboard, txtOUT, (70, 715),
+        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 4
     )
     cv2.putText(
-        dashboard, str(up_count), (270, 730),
-        cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 6
+        dashboard, str(up_count), (300, 730),
+        cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 6
     )
 
     #IN Panel
     cv2.rectangle(dashboard, (550, 620), (950, 780), (0, 120, 0), -1)
     cv2.putText(
-        dashboard, "IN", (600, 715),
-        cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 4
+        dashboard, txtIN, (600, 715),
+        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 4
     )
     cv2.putText(
-        dashboard, str(down_count), (770, 730),
-        cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 6
+        dashboard, str(down_count), (800, 730),
+        cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 6
     )
 
     cv2.imshow("Dashboard", dashboard)
@@ -240,8 +281,8 @@ for track_id, data in people_data.items():
     print("-" * 40)
 
 print(f"\nResumo:")
-print(f"Total IN (down): {down_count}")
-print(f"Total OUT (up): {up_count}")
+print(f"Total {txtIN} ({(txtIN).lower()}): {down_count}")
+print(f"Total {txtOUT} ({(txtOUT).lower()}): {up_count}")
 print(f"Total de pessoas detectadas: {len(people_data)}")
 
 # NOVO: Salvar os dados em um arquivo CSV para análise posterior

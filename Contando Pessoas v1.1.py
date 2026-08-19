@@ -10,7 +10,8 @@ from datetime import datetime
 model = YOLO("yolov8n.pt")  # load a pretrained model (recommended for training)
 
 #Line Position
-vPadrao = "VERTICAL"  # "HORIZONTAL" ou "VERTICAL"
+#vPadrao = "VERTICAL"  # "HORIZONTAL" ou "VERTICAL"
+vPadrao = "HORIZONTAL"  # "HORIZONTAL" ou "VERTICAL"
 if vPadrao == "HORIZONTAL":
     VIDEO_PATH = "people.mp4"
     LINE_Y = 300

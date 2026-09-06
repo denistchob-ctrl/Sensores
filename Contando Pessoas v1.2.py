@@ -65,8 +65,8 @@ def desenhar_trajetoria(frame, trajectory, cor=(255, 0, 0), ultimos_pontos=30):
 
 model = YOLO("yolov8n.pt")
 
-vPadrao = "VERTICAL"  # "HORIZONTAL" ou "VERTICAL"
-#vPadrao = "HORIZONTAL"  # "HORIZONTAL" ou "VERTICAL"
+#vPadrao = "VERTICAL"  # "HORIZONTAL" ou "VERTICAL"
+vPadrao = "HORIZONTAL"  # "HORIZONTAL" ou "VERTICAL"
 if vPadrao == "HORIZONTAL":
     VIDEO_PATH = "people.mp4"
     LINE_Y = 300

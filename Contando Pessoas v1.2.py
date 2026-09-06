@@ -65,8 +65,15 @@ def desenhar_trajetoria(frame, trajectory, cor=(255, 0, 0), ultimos_pontos=30):
 
 model = YOLO("yolov8n.pt")
 
-vPadrao = "VERTICAL"  # "HORIZONTAL" ou "VERTICAL"
-#vPadrao = "HORIZONTAL"  # "HORIZONTAL" ou "VERTICAL"
+tipo = ""
+while tipo not in ["H", "V"]:
+    tipo = input("Escolha o tipo de contagem ([H]ORIZONTAL ou [V]ERTICAL): ").strip().upper()
+
+if tipo == "V":
+    vPadrao = "VERTICAL"  
+else:
+    vPadrao = "HORIZONTAL"
+
 if vPadrao == "HORIZONTAL":
     VIDEO_PATH = "people.mp4"
     LINE_Y = 150
